@@ -1,0 +1,91 @@
+version: "3.8"
+services:
+
+  outstation:
+    container_name: outstation
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    cap_add:
+      - NET_ADMIN
+    networks:
+      field:
+        ipv4_address: 10.0.2.5
+    extra_hosts:
+      - "outstation.docker:10.0.2.5"
+      - "router.docker:10.0.2.2"
+      - "master.docker:10.0.1.10"
+    command: >-
+      sh -c "
+      ip route del default &&
+      ip route add default via 10.0.2.2 &&
+      tail -f /dev/null"
+    volumes:
+      - ../src:/root:shared
+    depends_on:
+      - router
+
+  master:
+    container_name: master
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    cap_add:
+      - NET_ADMIN
+    networks:
+      control-center:
+        ipv4_address: 10.0.1.10
+    extra_hosts:
+      - "outstation.docker:10.0.2.5"
+      - "router.docker:10.0.1.2"
+      - "master.docker:10.0.1.10"
+    command: >-
+      sh -c "
+      ip route del default &&
+      ip route add default via 10.0.1.2 &&
+      tail -f /dev/null"
+    volumes:
+      - ../src:/root:shared
+
+  router:
+    container_name: router
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    cap_add:
+      - NET_ADMIN
+    networks:
+      field:
+        ipv4_address: 10.0.2.2
+      control-center:
+        ipv4_address: 10.0.1.2
+    command: >-
+      sh -c "
+      iptables -A FORWARD -i eth0 -o eth1 -j ACCEPT &&
+      iptables -A FORWARD -i eth0 -o eth1 -j ACCEPT &&
+      tail -f /dev/null"
+    volumes:
+      - ../src:/root:shared
+
+
+networks:
+  field:
+    name: field
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.2.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br_field
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+
+  control-center:
+    name: control-center
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.1.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br_control-cent
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+
