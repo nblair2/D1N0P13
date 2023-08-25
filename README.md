@@ -9,7 +9,7 @@ A three-container docker-compose file is provided in order to test D1N0P13. It c
 
 1. Launch the docker containers with `docker-compose -f docker/docker-compose.yml`
 2. Open a shell on each of the docker containers with `docker exec -it {master|outstation|router} /bin/bash`
-3. Run the send or receive scripts with `/root/dnp3-channel-{server|client}.py [-opts]`
+3. Run the send or receive scripts with `/root/d1n0p13-{server|client}.py [-opts]`
 4. In order to simulate DNP3 traffic between the outstation and master, use the provided DNP3 examples located at `/bin/master-demo` and `/bin/DNP3-outstation-demo`. Run `/bin/outstation-demo` in the outstation container and then `/bin/DNP3-master-demo outstation.docker` in the master container. *note that the outstation needs to be started before the master, and in this case `outstation.docker` is resolved to the IP of the outstation container*
 
 ## Usage
