@@ -3,6 +3,7 @@
 
 import argparse
 import bitarray
+import bitarray.util
 import crc
 import netfilterqueue
 import random
@@ -20,6 +21,10 @@ def main():
 					channel embedded in DNP3 messages',
 			formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+	parser.add_argument('-m', '--method',
+						help='Method for encoding',
+						choices=["iin", "app-req", "app-resp"],
+						required=True)
 	parser.add_argument('-e', '--encryption',
 						help='Optional key to enable stream cipher',
 						required=False)
@@ -125,8 +130,10 @@ def extract_packets(packet):
 
 	# check if the packet is DNP3 and going to the right spot
 	if match_packet(pkt):
+		changed = False
+
 		# if packet has ApplicationIIN
-		if pkt.haslayer(DNP3ApplicationIIN):
+		if ((args.method == "iin") and pkt.haslayer(DNP3ApplicationIIN)):
 			#decode the nmessage into the two reserved fieldsS
 			message += str(pkt[DNP3ApplicationIIN].RESERVED_1)
 			message += str(pkt[DNP3ApplicationIIN].RESERVED_2)
@@ -134,9 +141,27 @@ def extract_packets(packet):
 			# reset the IIN RESERVED bits to 0 to cover our tracks
 			pkt[DNP3ApplicationIIN].RESERVED_1 = 0
 			pkt[DNP3ApplicationIIN].RESERVED_2 = 0
+			changed = True
+
+		elif ((args.method == "app-resp")
+				and pkt.haslayer(DNP3ApplicationResponse)):
+			pass
+			changed = True
+
+		elif ((args.method == "app-req")
+				and pkt.haslayer(DNP3ApplicationRequest)):
+			message += bitarray.iutil.int2ba(
+					pkt[DNP3ApplicationRequest].applicationFunctionCode // 0x22,
+					length=4)
+			pkt[DNP3ApplicationRequest].applicationFunctionCode = \
+					pkt[DNP3ApplicationRequest].applicationFunctionCode % 0x22
+			changed = True
+
+		if changed:
 			# and update the CRC
 			crc = update_data_chunk_crc(bytes(pkt[DNP3Transport]))
 			pkt[Raw].load = pkt[Raw].load[:-2] + crc[-2:]
+
 			# and delete other checksums so scapy will calculate
 			del pkt[IP].chksum
 			del pkt[TCP].chksum
@@ -144,10 +169,11 @@ def extract_packets(packet):
 
 	# send the packet onwards
 	packet.accept()
-	#send(pkt, verbose=False)
 
 	# check if we have reached the end of the stream
-	if (len(message) > 0) and (len(message) % 8 == 0) and (message[-8:] == bitarray.bitarray('00000000')):
+	if ((len(message) > 0)
+			and (len(message) % 8 == 0)
+			and (message[-8:] == bitarray.bitarray('00000000'))):
 
 		raise NameError("EndOfStream")
 

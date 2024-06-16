@@ -17,7 +17,7 @@ RUN apt-get update && \
     iputils-ping \
     traceroute \
     tcpdump \
-    python3.11 \
+    python3 \
     python3-pip \
     libnetfilter-queue-dev \
     libpcap-dev \

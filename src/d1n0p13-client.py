@@ -22,6 +22,10 @@ def main():
 
 	parser.add_argument(dest='message',
 						help='message to send')
+	parser.add_argument('-m', '--method',
+						help='Method for encoding',
+						choices=['iin', 'app-req', 'app-resp'],
+						required=True)
 	parser.add_argument('-e', '--encryption',
 						help='Optional key to enable stream cipher',
 						required=False)
@@ -103,6 +107,7 @@ def main():
 	interceptRule.extend(['--jump', 'NFQUEUE', '--queue-num', str(QUE_NUM)])
 	subprocess.run(interceptRule)
 
+
 	# Setup the nfqueue with alter_packets function
 	nfque = netfilterqueue.NetfilterQueue()
 	nfque.bind(QUE_NUM, alter_packets)
@@ -137,22 +142,38 @@ def alter_packets(packet):
 
 	# check if the packet is DNP3 and going to the right spot
 	if match_packet(pkt):
+		changed = False
+
 		# if the packet has ApplicationIIN
-		if pkt.haslayer(DNP3ApplicationIIN):
+		if (args.method == "iin") and pkt.haslayer(DNP3ApplicationIIN):
 			#encode the message into the two reserved fields
 			pkt[DNP3ApplicationIIN].RESERVED_1 = message[index]
 			pkt[DNP3ApplicationIIN].RESERVED_2 = message[index + 1]
+			# increment ind
+			index += 2
+			changed = True
 
+		elif ((args.method == "app-resp")
+				and pkt.haslayer(DNP3ApplicationResponse)):
+			pass
+			changed = True
+
+		elif ((args.method == "app-req")
+				and pkt.haslayer(DNP3ApplicationRequest)):
+			bits = message[index : index + 4]
+			pkt[DNP3ApplicationRequest].applicationFunctionCode += \
+					0x22 * (bits + 1)
+			index += 5
+			changed = True
+
+		if changed:
 			# update the CRC
 			crc = update_data_chunk_crc(bytes(pkt[DNP3Transport]))
 			pkt[Raw].load = pkt[Raw].load[:-2] + crc[-2:]
+			# remove checksums so they will be updated when sent
+			del pkt[IP].chksum
+			del pkt[TCP].chksum
 
-			# increment index
-			index += 2
-
-	# remove checksums so they will be updated when sent
-	del pkt[IP].chksum
-	del pkt[TCP].chksum
 	send(pkt, verbose=False)
 
 	if index + 1 >= len(message):
