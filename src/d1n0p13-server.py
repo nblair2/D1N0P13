@@ -150,11 +150,11 @@ def extract_packets(packet):
 
 		elif ((args.method == "app-req")
 				and pkt.haslayer(DNP3ApplicationRequest)):
-			message += bitarray.iutil.int2ba(
-					pkt[DNP3ApplicationRequest].applicationFunctionCode // 0x22,
-					length=4)
-			pkt[DNP3ApplicationRequest].applicationFunctionCode = \
-					pkt[DNP3ApplicationRequest].applicationFunctionCode % 0x22
+			message += bitarray.util.int2ba(
+					pkt[DNP3ApplicationRequest].FUNC_CODE // 0x22 - 1,
+					length=2)
+			pkt[DNP3ApplicationRequest].FUNC_CODE = \
+					pkt[DNP3ApplicationRequest].FUNC_CODE % 0x22
 			changed = True
 
 		if changed:

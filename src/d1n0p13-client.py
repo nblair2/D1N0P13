@@ -3,6 +3,7 @@
 
 import argparse
 import bitarray
+import bitarray.util
 import crc
 import netfilterqueue
 import random
@@ -160,10 +161,10 @@ def alter_packets(packet):
 
 		elif ((args.method == "app-req")
 				and pkt.haslayer(DNP3ApplicationRequest)):
-			bits = message[index : index + 4]
-			pkt[DNP3ApplicationRequest].applicationFunctionCode += \
-					0x22 * (bits + 1)
-			index += 5
+			bits = message[index : index + 2]
+			pkt[DNP3ApplicationRequest].FUNC_CODE += \
+					0x22 * (bitarray.util.ba2int(bits) + 1)
+			index += 2
 			changed = True
 
 		if changed:
