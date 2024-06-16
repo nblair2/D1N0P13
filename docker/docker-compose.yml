@@ -21,7 +21,7 @@ services:
       ip route add default via 10.0.2.2 &&
       tail -f /dev/null"
     volumes:
-      - ../src:/root:shared
+      - ../src:/root:ro
     depends_on:
       - router
 
@@ -45,7 +45,7 @@ services:
       ip route add default via 10.0.1.2 &&
       tail -f /dev/null"
     volumes:
-      - ../src:/root:shared
+      - ../src:/root:ro
 
   router:
     container_name: router
@@ -65,7 +65,7 @@ services:
       iptables -A FORWARD -i eth0 -o eth1 -j ACCEPT &&
       tail -f /dev/null"
     volumes:
-      - ../src:/root:shared
+      - ../src:/root:ro
 
 
 networks:

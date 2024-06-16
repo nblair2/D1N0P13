@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM python:3
 
 # Install Tools
 RUN apt-get update && \
@@ -24,7 +24,9 @@ RUN apt-get update && \
     && apt-get clean
 
 # Install python packages
-RUN python3 -m pip install scapy netfilterqueue crcmod crc bitarray
+WORKDIR /root/
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Install DNP3-demo
 RUN cd /usr/local/src && \
