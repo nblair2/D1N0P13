@@ -132,6 +132,8 @@ def extract_packets(packet):
 	if match_packet(pkt):
 		changed = False
 
+		print(pkt)
+
 		# if packet has ApplicationIIN
 		if ((args.method == "iin") and pkt.haslayer(DNP3ApplicationIIN)):
 			#decode the nmessage into the two reserved fieldsS
@@ -145,7 +147,9 @@ def extract_packets(packet):
 
 		elif ((args.method == "app-resp")
 				and pkt.haslayer(DNP3ApplicationResponse)):
-			pass
+			extra = pkt[DNP3ApplicationResponset].FUNC_CODE - 0x83
+			message += bitarray.util.int2ba(extra // 0x3 - 1, length=4)
+			pkt[DNP3ApplicationRequest].FUNC_CODE = 0x81 + (extra % 0x3)
 			changed = True
 
 		elif ((args.method == "app-req")

@@ -156,7 +156,10 @@ def alter_packets(packet):
 
 		elif ((args.method == "app-resp")
 				and pkt.haslayer(DNP3ApplicationResponse)):
-			pass
+			bits = message[index : index + 4]
+			pkt[DNP3ApplicationRespone].FUNC_CODE += \
+					0x3 * (bitarray.util.ba2int(bits) + 1)
+			index += 4
 			changed = True
 
 		elif ((args.method == "app-req")
