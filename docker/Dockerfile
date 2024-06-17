@@ -17,8 +17,6 @@ RUN apt-get update && \
     iputils-ping \
     traceroute \
     tcpdump \
-    python3 \
-    python3-pip \
     libnetfilter-queue-dev \
     libpcap-dev \
     && apt-get clean
