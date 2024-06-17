@@ -145,6 +145,7 @@ def alter_packets(packet):
 	if match_packet(pkt):
 		changed = False
 
+
 		# if the packet has ApplicationIIN
 		if (args.method == "iin") and pkt.haslayer(DNP3ApplicationIIN):
 			#encode the message into the two reserved fields
@@ -157,8 +158,8 @@ def alter_packets(packet):
 		elif ((args.method == "app-resp")
 				and pkt.haslayer(DNP3ApplicationResponse)):
 			bits = message[index : index + 4]
-			pkt[DNP3ApplicationRespone].FUNC_CODE += \
-					0x3 * (bitarray.util.ba2int(bits) + 1)
+			pkt[DNP3ApplicationResponse].FUNC_CODE += \
+					0x03 * (bitarray.util.ba2int(bits) + 1)
 			index += 4
 			changed = True
 
